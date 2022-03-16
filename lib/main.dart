@@ -14,9 +14,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return  MaterialApp(
       title: 'Welcome to Flutter',
-      home: RandomWords()
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+      ),
+      home: const RandomWords()
       /*Scaffold(
         appBar: AppBar(
           title: const Text('Welcome to Flutter'),
@@ -39,6 +45,7 @@ class RandomWords extends StatefulWidget {
 class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
   final _biggerFont = const TextStyle(fontSize: 18.0);
+  final _saved = <WordPair>{};
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +53,16 @@ class _RandomWordsState extends State<RandomWords> {
     final wordPair = WordPair.random();
     return new Text(wordPair.asPascalCase);
     */
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Startup Name Generator"),
+        actions: [
+          IconButton(
+              onPressed: _pushSaved,
+              icon: const Icon(Icons.list)),
+              //tooltip: 'Saved Sugesstion'
+        ],
       ),
       body: ListView.builder(
           padding: const EdgeInsets.all(16.0) ,
@@ -58,14 +72,60 @@ class _RandomWordsState extends State<RandomWords> {
             if(index >= _suggestions.length){
               _suggestions.addAll(generateWordPairs().take(10));
             }
+            final _wordPair = _suggestions[index];
+            final _alreadySaved = _saved.contains(_wordPair);
             return ListTile(
               title: Text(
-                  _suggestions[index].asPascalCase,
+                  _wordPair.asPascalCase,
                   style: _biggerFont
               ),
+              trailing: Icon(
+                _alreadySaved ? Icons.favorite : Icons.favorite_border,
+                color: _alreadySaved ? Colors.red : null ,
+                semanticLabel: _alreadySaved ? 'Removed from Saved' : 'Save',
+              ),
+              onTap: (){
+                setState(() {
+                  if (_alreadySaved){
+                    _saved.remove(_wordPair);
+                  }else{
+                    _saved.add(_wordPair);
+                  }
+                });
+              },
             );
           }
       ),
+    );
+  }
+
+  void _pushSaved(){
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context){
+        final tiles = _saved.map(
+              (pair) {
+            return ListTile(
+              title: Text(
+                pair.asPascalCase,
+                style: _biggerFont,
+              ),
+            );
+            },
+        );
+        final divided = tiles.isNotEmpty
+            ?ListTile.divideTiles(
+          tiles: tiles,
+          context: context,
+        ).toList()
+            :<Widget>[];
+        return Scaffold(
+          appBar: new AppBar(
+            title: const Text('Saved Suggestions'),
+          ),
+          body: ListView(children: divided),
+        );
+      }
+      )
     );
   }
 }
